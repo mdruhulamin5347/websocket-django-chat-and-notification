@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User List</title>
+    <style>
+        .user-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f7f7f7;
+            border-radius: 5px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .user {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            display: flex;
+            justify-content: space-between;
+        }
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+        .user-name {
+            font-weight: bold;
+        }
+        .status {
+            font-size: 0.9em;
+            color: #888;
+        }
+        .chat-button {
+            padding: 5px 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .chat-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="user-container">
+        <h2>Available Users</h2>
+
+        <!-- Loop through user list -->
+        {% for i in user_chat_list %}
+            <div class="user">
+                <div class="user-details">
+                    <p class="user-name"><a href="{% url 'chat' i.user.id %}">{{ i.user.username }}</a></p>
+                    <p class="status">
+                        {% if i.last_message.sender == request.user  %}
+                            You: {{ i.last_message.message }} <small>{{i.last_message.created_at}}</small>
+                        {% elif i.last_message.receiver == request.user %}
+                            {{ i.last_message.message }} <small>{{i.last_message.created_at}}</small>
+                        {% else %}
+                             no message available
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        {% empty %}
+            <p>No users available.</p>
+        {% endfor %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">My Website</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'login' %}">Login</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'registration' %}">Register</a>
+                </li>
+                <li class="nav-item"></li>
+                    <a class="nav-link" href="{% url 'user_list' %}">User List</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+        <div>
+            <form method="POST" action="">
+                {% csrf_token %}
+                <input type="text" name="message" placeholder="enter your notification">
+                <button class="btn btn-primary btn-sm" type="submit">send</button>
+            </form>
+        </div>
+    <div class="container text-center">
+        <h1 class="mt-5">Welcome to My Website</h1>
+        <p>This is a simple homepage. Please register or login to explore the features.</p>
+
+        <div class="mt-4">
+            <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+            <a href="{% url 'registration' %}" class="btn btn-secondary">Register</a>
+        </div>
+    </div>
+    <h2>Notifications</h2>
+    <div id="notificationContainer">
+
+    </div>
+    <div>
+        {% for i in notifications %}
+        <div>{{i.message}} - <small>{{i.user.username}}</small></div>
+    {% endfor %}
+    </div>
+    
+
+<script>
+    // Establish a WebSocket connection
+    const ws = new WebSocket('ws://localhost:8000/ws/notifications/');
+
+    // When the WebSocket receives a message, display the notification
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        const message = data.message;
+        const username = data.username;
+
+        // Display the notification in the container
+        displayNotification(username, message);
+    };
+
+    // Function to display notification in the DOM
+    function displayNotification(username, message) {
+        const notificationContainer = document.getElementById('notificationContainer');
+        const notificationElement = document.createElement('div');
+        notificationElement.innerHTML = `<strong>${username}</strong>: ${message}`;  // Show username with message
+        notificationContainer.appendChild(notificationElement);  // Append the new notification
+    }
+</script>
+    <!-- Optional: Footer -->
+    <footer class="bg-light text-center mt-5 p-3">
+        <p>&copy; 2024 My Website. All rights reserved.</p>
+    </footer>
+
+
+
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+
+
+</body>
+</html>

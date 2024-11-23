@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Window</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.7.0"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+
+    <style>
+        /* Custom styles for scroll bar */
+        #chat_container {
+            scrollbar-width: thin;
+            scrollbar-color: #bbb #333;
+        }
+
+        #chat_container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #chat_container::-webkit-scrollbar-thumb {
+            background-color: #bbb;
+            border-radius: 8px;
+        }
+
+        #chat_container::-webkit-scrollbar-track {
+            background-color: #333;
+        }
+
+        /* Input field custom styling */
+        input[name="message"] {
+            width: 100%;
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        input[name="message"]::placeholder {
+            color: #a0aec0;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <!-- Chat Window Wrapper -->
+    <div class="block max-w-2xl mx-auto my-10 px-6">
+        <div id="chat_window" class="h-[45rem] flex flex-col bg-gray-800 rounded-2xl shadow-2xl relative p-1">
+
+            <!-- Top Section with Back Button and Online Users Counter -->
+            <div class="flex justify-between items-center p-2 sticky top-0 z-10 bg-gray-800">
+                <button 
+                    class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded-lg flex items-center text-sm" 
+                    onclick="window.history.back();"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 mr-2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                </button>
+                <div class="text-emerald-400">
+                    <span id="online-count" class="pr-1">3</span> online
+                </div>
+            </div>
+
+            <!-- Chat Messages Container -->
+            <div id='chat_container' class="overflow-y-auto grow">
+                <ul id='chat_messages' class="flex flex-col justify-end gap-2 p-4">
+                    {% for chat in all_message %}
+                    {% if chat.sender == request.user %}
+                    <li class="flex justify-end mb-4">
+                        <div class="bg-green-200 rounded-l-lg rounded-tr-lg p-4 max-w-[75%]">
+                            <span class="text-black">{{ chat.message }}</span>
+                        </div>
+                        <div class="flex items-end">
+                            <svg height="13" width="8">
+                                <path fill="#bbf7d0" d="M6.3,10.4C1.5,8.7,0.9,5.5,0,0.2L0,13l5.2,0C7,13,9.6,11.5,6.3,10.4z"/>
+                            </svg>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="flex justify-start mb-4">
+                        <div class="flex items-end mr-2">
+                            <a href="">
+                                <img class="w-8 h-8 rounded-full object-cover" src="https://pbs.twimg.com/profile_images/508601156767997952/fFTdKUf2_400x400.jpeg" alt="User Image">
+                            </a>
+                        </div>
+                        <div class="bg-white rounded-r-lg rounded-tl-lg p-4 max-w-[75%]">
+                            <span class="text-black">{{ chat.message }}</span>
+                        </div>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Message Input -->
+            <div class="sticky bottom-0 z-10 p-2 bg-gray-800">
+                <div class="flex items-center rounded-xl px-2 py-2">
+                    <form id="chat_message_form" method="POST" class="flex w-full" onsubmit="sendMessage(event)">
+                        {% csrf_token %}
+                        <input type="text" id="chat_input_field" name="message" placeholder="Add message ..." maxlength="150" class="w-full rounded-l-lg p-3 text-sm bg-gray-900 text-white border-none" required>
+                        <button type="submit" class="px-4 py-3 bg-gray-600 text-white rounded-r-lg hover:bg-emerald-500 transition ease-in-out duration-150">
+                            Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection setup
+        const chatSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/realtimechat/'
+        );
+
+        // Handle incoming messages
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data); // Parse incoming JSON
+            const chat = data.chat; // Extract chat message
+            const receive = data.receive; // Extract sender's username
+
+            // Update chat container with new message
+            const chatContainer = document.getElementById('chat_messages');
+            const newMessage = document.createElement('li'); // Create new list item
+
+            if (receive === '{{ request.user.username }}') {
+                newMessage.classList.add('flex', 'justify-end', 'mb-4');
+                newMessage.innerHTML = `
+                    <div class="bg-green-200 rounded-l-lg rounded-tr-lg p-4 max-w-[75%]">
+                        <span class="text-black">${chat}</span>
+                    </div>
+                `;
+            } else {
+                newMessage.classList.add('flex', 'justify-start', 'mb-4');
+                newMessage.innerHTML = `
+                    <div class="flex items-end mr-2">
+                        <a href="">
+                            <img class="w-8 h-8 rounded-full object-cover" src="https://pbs.twimg.com/profile_images/508601156767997952/fFTdKUf2_400x400.jpeg" alt="User Image">
+                        </a>
+                    </div>
+                    <div class="bg-white p-4 max-w-[75%] rounded-r-lg rounded-tl-lg">
+                        <span class="text-black">${chat}</span>
+                    </div>
+                `;
+            }
+
+            chatContainer.appendChild(newMessage); // Append new message
+            scrollToBottom(); // Scroll to the bottom of the chat
+        };
+
+        // Handle WebSocket connection open event
+        chatSocket.onopen = function(e) {
+            console.log('WebSocket connection established');
+        };
+
+        // Handle WebSocket connection close event
+        chatSocket.onclose = function(e) {
+            console.error('WebSocket connection closed unexpectedly');
+        };
+
+        // Function to send messages
+        // Function to send messages
+        document.getElementById('chat_message_form').onsubmit = function(e) {
+            e.preventDefault();
+            const messageInput = document.getElementById('chat_input_field');
+            const message = messageInput.value;
+            const receiver = '{{ receive }}'; // Replace with actual receiver's username
+
+            chatSocket.send(JSON.stringify({
+                'message': message,
+                'receiver': receiver // Include receiver in the message
+            }));
+
+            messageInput.value = '';
+        };
+
+        // Function to scroll to the bottom of the chat container
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chat_container');
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom
+        }
+        scrollToBottom()
+    </script>
+</body>
+</html>
