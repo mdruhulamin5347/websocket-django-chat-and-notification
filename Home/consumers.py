@@ -39,6 +39,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         #             'message': message
         #         }
         #     )
+    
 
     async def send_notification(self, event):
     # Check that message and username are present in the event
